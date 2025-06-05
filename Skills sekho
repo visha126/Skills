@@ -1,1 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SkillVerse 3D – Fixed Info Panel</title>
 
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─────────── BASIC RESET & BODY ─────────── */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #0a0a14, #000009 80%);
+      color: #ffffff;
+      position: relative;
+      animation: pulseBackground 12s ease-in-out infinite;
+    }
+    @keyframes pulseBackground {
+      0%   { background: radial-gradient(circle at 50% 50%, #0a0a14, #000009 80%); }
+      50%  { background: radial-gradient(circle at 50% 50%, #0e0e1f, #000010 85%); }
+      100% { background: radial-gradient(circle at 50% 50%, #0a0a14, #000009 80%); }
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* ─────────── INFO PANEL (GLASSMORPHIC, FIXED POSITION) ─────────── */
+    .info-box {
+      position: absolute;
+      top: 40px;
+      left: 40px;
+      width: 320px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      padding: 20px 20px 16px 20px;
+      display: none;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      z-index: 5;
+    }
+    .info-box.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .info-box header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .info-box header h2 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #00e5ff;
+      line-height: 1.2;
+    }
+    .info-box header .close-btn {
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #ffffff;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s ease;
+    }
+    .info-box header .close-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .info-box p {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: #f0f0fa;
+      margin-bottom: 12px;
+    }
+    .info-box ul {
+      list-style: inside disc;
+      margin-left: 12px;
+      margin-bottom: 12px;
+    }
+    .info-box ul li {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      color: #d0f0ff;
+    }
+    .info-box a {
+      color: #88ffff;
+      text-decoration: underline;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─────────── INFO PANEL ─────────── -->
+  <div class="info-box" id="infoBox">
+    <header>
+      <h2 id="skillTitle">Skill Name</h2>
+      <button class="close-btn" id="closeBtn">&times;</button>
+    </header>
+    <p id="skillDesc">Extended description goes here.</p>
+    <ul id="skillList">
+      <!-- bullet points set dynamically -->
+    </ul>
+    <a href="#" target="_blank" id="skillLink">Learn More →</a>
+  </div>
+
+  <!-- ─────────── THREE.JS & GSAP ─────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <script>
+    // ================== SCENE SETUP ==================
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Ambient & Point Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0x00e5ff, 1.2, 100);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    // ================== SKILLS DATA ==================
+    const skills = [
+      {
+        name: "Web Development",
+        desc: "Build dynamic, responsive websites and web apps from scratch, using the latest tools and best practices. Master both front-end and back-end to become a full-stack developer.",
+        items: [
+          "HTML5, CSS3 & Modern Layouts (Flexbox, Grid)",
+          "JavaScript (ES6+), DOM Manipulation, Fetch API",
+          "Frameworks: React, Vue, Angular",
+          "Node.js, Express, RESTful APIs",
+          "Deployment: Netlify, Vercel, Heroku"
+        ],
+        link: "https://www.freecodecamp.org/learn"
+      },
+      {
+        name: "Python Programming",
+        desc: "Dive into Python for automation, data analysis, machine learning, and more. From core syntax to advanced libraries, you’ll learn to write clean, efficient code.",
+        items: [
+          "Data Structures: Lists, Dicts, Sets, Tuples",
+          "Web Scraping: BeautifulSoup, Selenium",
+          "Data Science: Pandas, NumPy, Matplotlib",
+          "Machine Learning: scikit-learn, TensorFlow, PyTorch",
+          "Automation: Selenium, Scripting"
+        ],
+        link: "https://docs.python.org/3/tutorial/"
+      },
+      {
+        name: "Graphic Design",
+        desc: "Unleash your creativity by designing stunning visuals for web, print, and social media. Master industry standard tools and fundamental design principles.",
+        items: [
+          "Adobe Photoshop: Photo Editing & Compositing",
+          "Adobe Illustrator: Vector Illustration",
+          "Figma/Sketch: UI/UX Prototyping",
+          "Design Principles: Color Theory, Typography",
+          "Branding & Logo Design"
+        ],
+        link: "https://www.adobe.com/creativecloud.html"
+      },
+      {
+        name: "Video Editing",
+        desc: "Learn how to craft engaging videos—cutting, color grading, adding transitions, and audio mixing—to tell compelling stories that captivate any audience.",
+        items: [
+          "Adobe Premiere Pro: Timeline Editing & Effects",
+          "DaVinci Resolve: Color Grading & Correction",
+          "After Effects: Motion Graphics & VFX Basics",
+          "Sound Design: Audition & Audio Mixing",
+          "Exporting for Platforms: YouTube, Instagram"
+        ],
+        link: "https://www.adobe.com/products/premiere.html"
+      },
+      {
+        name: "Digital Marketing",
+        desc: "Understand how to grow an online presence through SEO, paid ads, social media strategies, email campaigns, and analytics—turning visitors into loyal customers.",
+        items: [
+          "SEO: On-Page, Off-Page, Technical Audits",
+          "Google Ads & Facebook Ads Campaigns",
+          "Content Marketing & Blogging",
+          "Email Marketing: Mailchimp, Campaign Monitor",
+          "Analytics: Google Analytics & Data-Driven Decisions"
+        ],
+        link: "https://www.hubspot.com/marketing"
+      },
+      {
+        name: "3D Modeling & Art",
+        desc: "Jump into the world of 3D—model, texture, and render amazing assets using industry tools. Perfect for game dev, film, VR, and even 3D printing.",
+        items: [
+          "Blender Basics: Modeling, Sculpting, UV-Mapping",
+          "Autodesk Maya: Animation & Rigging Essentials",
+          "Texturing with Substance Painter",
+          "Rendering Engines: Cycles, Eevee, V-Ray",
+          "Portfolio Building: Showcasing 3D Assets"
+        ],
+        link: "https://www.blender.org/support/tutorials/"
+      }
+    ];
+
+    // ================== CREATE 3D CUBE ==================
+    const faceMaterials = skills.map(skill => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      // Draw glossy background
+      const gradient = ctx.createLinearGradient(0, 0, 256, 256);
+      gradient.addColorStop(0, '#14141d');
+      gradient.addColorStop(1, '#1a1a2f');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Draw glow circle behind text
+      ctx.beginPath();
+      const grd = ctx.createRadialGradient(128, 128, 10, 128, 128, 120);
+      grd.addColorStop(0, 'rgba(0, 229, 255, 0.3)');
+      grd.addColorStop(1, 'rgba(0, 229, 255, 0)');
+      ctx.fillStyle = grd;
+      ctx.arc(128, 128, 120, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Write the skill name
+      ctx.fillStyle = '#00e5ff';
+      ctx.font = 'bold 22px Poppins';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(skill.name, 128, 128);
+
+      return new THREE.MeshStandardMaterial({
+        map: new THREE.CanvasTexture(canvas),
+        transparent: true,
+        roughness: 0.4,
+        metalness: 0.6
+      });
+    });
+
+    const cubeGeo = new THREE.BoxGeometry(2, 2, 2);
+    const cube = new THREE.Mesh(cubeGeo, faceMaterials);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    // Slight camera float animation
+    const clock = new THREE.Clock();
+    function updateCameraFloat() {
+      const t = clock.getElapsedTime() * 0.5;
+      camera.position.y = Math.sin(t * 0.5) * 0.2;
+      camera.position.x = Math.cos(t * 0.3) * 0.2;
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    // ================== GALAXY-STYLE PARTICLES ==================
+    const particleCount = 2000;
+    const particlesGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const angles = new Float32Array(particleCount);
+    const radii = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      const radius = THREE.MathUtils.randFloat(5, 20);
+      const angle = THREE.MathUtils.randFloat(0, Math.PI * 2);
+      const y = THREE.MathUtils.randFloatSpread(10);
+
+      radii[i] = radius;
+      angles[i] = angle;
+
+      positions[i * 3 + 0] = Math.cos(angle) * radius;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+    particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeo.setAttribute('angle', new THREE.BufferAttribute(angles, 1));
+    particlesGeo.setAttribute('radius', new THREE.BufferAttribute(radii, 1));
+
+    const particlesMat = new THREE.PointsMaterial({
+      size: 0.04,
+      color: 0x00e5ff,
+      transparent: true,
+      opacity: 0.7
+    });
+    const galaxy = new THREE.Points(particlesGeo, particlesMat);
+    scene.add(galaxy);
+
+    // ================== RAYCASTER FOR CLICK EVENTS ==================
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    window.addEventListener('click', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(cube);
+      if (intersects.length > 0) {
+        const faceIndex = Math.floor(intersects[0].faceIndex / 2);
+        showSkillInfo(faceIndex);
+      }
+    });
+
+    // ================== DISPLAY SKILL INFO PANEL ==================
+    const infoBox = document.getElementById('infoBox');
+    const skillTitle = document.getElementById('skillTitle');
+    const skillDesc = document.getElementById('skillDesc');
+    const skillList = document.getElementById('skillList');
+    const skillLink = document.getElementById('skillLink');
+    const closeBtn = document.getElementById('closeBtn');
+
+    function showSkillInfo(index) {
+      const skill = skills[index];
+      skillTitle.textContent = skill.name;
+      skillDesc.textContent = skill.desc;
+
+      // Fill bullet list
+      skillList.innerHTML = '';
+      skill.items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        skillList.appendChild(li);
+      });
+
+      // Set external link
+      skillLink.href = skill.link;
+
+      // Always show at fixed top-left—no dynamic repositioning
+      infoBox.classList.add('active');
+      gsap.fromTo(infoBox, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' });
+    }
+
+    // Close button hides panel
+    closeBtn.addEventListener('click', () => {
+      gsap.to(infoBox, {
+        opacity: 0,
+        y: '-=20',
+        duration: 0.4,
+        ease: 'power2.in',
+        onComplete: () => infoBox.classList.remove('active')
+      });
+    });
+
+    // ================== ANIMATION LOOP ==================
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Rotate cube
+      cube.rotation.x += 0.004;
+      cube.rotation.y += 0.008;
+
+      // Camera float
+      updateCameraFloat();
+
+      // Animate galaxy particles
+      const posArray = particlesGeo.attributes.position.array;
+      const angleArray = particlesGeo.attributes.angle.array;
+      const radiusArray = particlesGeo.attributes.radius.array;
+      const time = clock.getElapsedTime() * 0.2;
+
+      for (let i = 0; i < particleCount; i++) {
+        angleArray[i] += 0.002 + (radiusArray[i] * 0.0001);
+        const a = angleArray[i];
+        const r = radiusArray[i];
+        // Bobbing up/down
+        posArray[i * 3 + 1] += Math.sin(time + r) * 0.0005;
+        posArray[i * 3 + 0] = Math.cos(a) * r;
+        posArray[i * 3 + 2] = Math.sin(a) * r;
+      }
+      particlesGeo.attributes.position.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ================== HANDLE WINDOW RESIZE ==================
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
